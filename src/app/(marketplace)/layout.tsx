@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import { getHumanFromCookie } from '@/lib/auth'
 
+export const dynamic = 'force-dynamic'
+
 export default async function MarketplaceLayout({ children }: { children: React.ReactNode }) {
   const human = await getHumanFromCookie()
 

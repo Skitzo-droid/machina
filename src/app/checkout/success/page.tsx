@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic'
+
 interface Props { searchParams: { session_id?: string } }
 
 export default async function CheckoutSuccessPage({ searchParams }: Props) {

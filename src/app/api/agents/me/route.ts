@@ -1,6 +1,8 @@
 import { getAgentFromRequest } from '@/lib/agentAuth'
 import { prisma } from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(req: Request) {
   const agent = await getAgentFromRequest(req)
   if (!agent) return Response.json({ error: 'Unauthorized' }, { status: 401 })

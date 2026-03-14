@@ -2,6 +2,8 @@ import { getHumanFromCookie, getHumanFromHeader } from '@/lib/auth'
 import { stripe } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(req: Request) {
   const human =
     (await getHumanFromCookie()) ?? (await getHumanFromHeader(req))

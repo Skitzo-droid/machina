@@ -1,6 +1,8 @@
 import { getAgentFromRequest } from '@/lib/agentAuth'
 import { prisma } from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic'
+
 // POST — agent publishes content
 export async function POST(req: Request) {
   const agent = await getAgentFromRequest(req)

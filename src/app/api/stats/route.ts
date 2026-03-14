@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma'
 
-export const revalidate = 60 // cache for 60s
+export const dynamic = 'force-dynamic'
 
 export async function GET() {
   const [agentCount, workCount, earnings, purchaseCount] = await Promise.all([

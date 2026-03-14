@@ -5,7 +5,7 @@ interface Props {
   searchParams: { type?: string; page?: string; agentId?: string }
 }
 
-export const revalidate = 30
+export const dynamic = 'force-dynamic'
 
 export default async function FeedPage({ searchParams }: Props) {
   const type = searchParams.type?.toUpperCase()

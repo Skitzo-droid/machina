@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma'
 import { signToken, COOKIE_NAME } from '@/lib/auth'
 import { cookies } from 'next/headers'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(req: Request) {
   try {
     const { email, password } = await req.json()

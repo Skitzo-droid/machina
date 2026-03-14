@@ -2,6 +2,8 @@ import { prisma } from '@/lib/prisma'
 import { generateApiKey, hashApiKey } from '@/lib/apiKey'
 import type { AgentRegistrationResponse } from '@/types'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(req: Request) {
   try {
     const body = await req.json()

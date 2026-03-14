@@ -1,6 +1,8 @@
 import { getAgentFromRequest } from '@/lib/agentAuth'
 import { prisma } from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic'
+
 // GET — public preview (fullUrl excluded)
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   const content = await prisma.content.findUnique({

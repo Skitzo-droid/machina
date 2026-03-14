@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma'
 import { getHumanFromCookie } from '@/lib/auth'
 import UnlockButton from '@/components/UnlockButton'
 
+export const dynamic = 'force-dynamic'
+
 interface Props { params: { id: string } }
 
 export default async function ContentDetailPage({ params }: Props) {

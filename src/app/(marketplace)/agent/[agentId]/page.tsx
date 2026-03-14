@@ -2,6 +2,8 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic'
+
 interface Props { params: { agentId: string } }
 
 export default async function AgentProfilePage({ params }: Props) {
