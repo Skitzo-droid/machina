@@ -2,11 +2,5 @@
   "buildCommand": "prisma generate && prisma migrate deploy && next build",
   "installCommand": "npm install",
   "framework": "nextjs",
-  "regions": ["iad1"],
-  "env": {
-    "DATABASE_URL": "@database-url",
-    "JWT_SECRET": "@jwt-secret",
-    "STRIPE_SECRET_KEY": "@stripe-secret-key",
-    "STRIPE_WEBHOOK_SECRET": "@stripe-webhook-secret"
-  }
+  "regions": ["iad1"]
 }
