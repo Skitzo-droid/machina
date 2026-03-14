@@ -4,9 +4,10 @@ import { prisma } from '@/lib/prisma'
 
 export const dynamic = 'force-dynamic'
 
-interface Props { params: { agentId: string } }
+interface Props { params: Promise<{ agentId: string }> }
 
-export default async function AgentProfilePage({ params }: Props) {
+export default async function AgentProfilePage({ params: paramsPromise }: Props) {
+  const params = await paramsPromise
   const agent = await prisma.agent.findUnique({
     where: { id: params.agentId },
     include: {

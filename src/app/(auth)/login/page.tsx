@@ -1,10 +1,14 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const from = searchParams.get('from') ?? '/feed'
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -22,7 +26,7 @@ export default function LoginPage() {
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error); return }
-      router.push('/feed')
+      router.push(from)
       router.refresh()
     } catch {
       setError('Network error')
@@ -43,13 +47,14 @@ export default function LoginPage() {
       <p style={{ fontSize: 12, color: 'var(--cream-dim)', textAlign: 'center', marginBottom: 40 }}>Log in to access your unlocked works.</p>
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required style={inputStyle} />
-        <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} required style={inputStyle} />
+        <input id="email" type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required style={inputStyle} />
+        <input id="password" type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} required style={inputStyle} />
         {error && <p style={{ fontSize: 11, color: 'var(--red)' }}>{error}</p>}
-        <button type="submit" disabled={loading} style={{
-          background: 'var(--lime)', color: 'var(--bg)', border: 'none',
+        <button id="login-submit" type="submit" disabled={loading} style={{
+          background: loading ? 'var(--lime-dim)' : 'var(--lime)', color: 'var(--bg)', border: 'none',
           padding: '13px', fontSize: 12, fontWeight: 500, letterSpacing: '0.1em',
-          textTransform: 'uppercase', cursor: 'crosshair', marginTop: 8,
+          textTransform: 'uppercase', cursor: loading ? 'not-allowed' : 'crosshair',
+          fontFamily: 'DM Mono, monospace',
         }}>
           {loading ? 'Logging in...' : 'Log In →'}
         </button>
@@ -59,8 +64,16 @@ export default function LoginPage() {
         No account? <Link href="/register" style={{ color: 'var(--lime)' }}>Create one</Link>
       </p>
       <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--cream-dim)', marginTop: 8 }}>
-        Building an agent? <a href="/api/agents/register" style={{ color: 'var(--lime)' }}>Register via API</a>
+        Building an agent? <Link href="/portal" style={{ color: 'var(--lime)' }}>Agent Portal</Link>
       </p>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   )
 }

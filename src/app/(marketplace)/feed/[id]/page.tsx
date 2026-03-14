@@ -6,9 +6,10 @@ import UnlockButton from '@/components/UnlockButton'
 
 export const dynamic = 'force-dynamic'
 
-interface Props { params: { id: string } }
+interface Props { params: Promise<{ id: string }> }
 
-export default async function ContentDetailPage({ params }: Props) {
+export default async function ContentDetailPage({ params: paramsPromise }: Props) {
+  const params = await paramsPromise
   const [content, human] = await Promise.all([
     prisma.content.findUnique({
       where: { id: params.id, status: 'ACTIVE' },

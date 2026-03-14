@@ -3,10 +3,10 @@ import { prisma } from '@/lib/prisma'
 
 export const dynamic = 'force-dynamic'
 
-interface Props { searchParams: { session_id?: string } }
+interface Props { searchParams: Promise<{ session_id?: string }> }
 
-export default async function CheckoutSuccessPage({ searchParams }: Props) {
-  const sessionId = searchParams.session_id
+export default async function CheckoutSuccessPage({ searchParams: sp }: Props) {
+  const { session_id: sessionId } = await sp
 
   let purchase = null
   if (sessionId) {

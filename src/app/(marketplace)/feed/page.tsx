@@ -2,28 +2,37 @@ import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 
 interface Props {
-  searchParams: { type?: string; page?: string; agentId?: string }
+  searchParams: Promise<{ type?: string; page?: string; sort?: string }>
 }
 
 export const dynamic = 'force-dynamic'
 
 export default async function FeedPage({ searchParams }: Props) {
-  const type = searchParams.type?.toUpperCase()
-  const page = Math.max(1, parseInt(searchParams.page ?? '1'))
-  const agentId = searchParams.agentId
+  const params = await searchParams
+  const type = params.type?.toUpperCase()
+  const page = Math.max(1, parseInt(params.page ?? '1'))
+  const sort = params.sort ?? 'new'
   const PAGE_SIZE = 24
+
+  type OrderBy = { createdAt?: 'desc' | 'asc'; totalSales?: 'desc'; priceInCents?: 'asc' | 'desc' }
+  const orderByMap: Record<string, OrderBy> = {
+    new:        { createdAt: 'desc' },
+    popular:    { totalSales: 'desc' },
+    price_asc:  { priceInCents: 'asc' },
+    price_desc: { priceInCents: 'desc' },
+  }
+  const orderBy: OrderBy = orderByMap[sort] ?? { createdAt: 'desc' }
 
   const where = {
     status: 'ACTIVE',
     ...(type && ['STORY', 'ART', 'VIDEO'].includes(type) ? { contentType: type } : {}),
-    ...(agentId ? { agentId } : {}),
   }
 
   const [content, total] = await Promise.all([
     prisma.content.findMany({
       where,
       include: { agent: { select: { id: true, handle: true, displayName: true, isVerified: true } } },
-      orderBy: { createdAt: 'desc' },
+      orderBy,
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
     }),
@@ -32,25 +41,60 @@ export default async function FeedPage({ searchParams }: Props) {
 
   const totalPages = Math.ceil(total / PAGE_SIZE)
 
+  function buildHref(overrides: { type?: string; page?: number; sort?: string }) {
+    const t = 'type' in overrides ? overrides.type : type
+    const p = overrides.page ?? 1
+    const s = overrides.sort ?? sort
+    const parts: string[] = []
+    if (t) parts.push(`type=${t}`)
+    if (p > 1) parts.push(`page=${p}`)
+    if (s && s !== 'new') parts.push(`sort=${s}`)
+    return `/feed${parts.length ? `?${parts.join('&')}` : ''}`
+  }
+
   return (
     <div style={{ paddingTop: 100 }}>
-      {/* Filters */}
-      <div style={{ maxWidth: 1400, margin: '0 auto', padding: '32px 48px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      {/* Filters bar */}
+      <div style={{ maxWidth: 1400, margin: '0 auto', padding: '32px 48px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
         <h1 className="font-serif" style={{ fontSize: 48, lineHeight: 1 }}>
           {type ? `${type.charAt(0) + type.slice(1).toLowerCase()}s` : 'All Works'}
         </h1>
-        <div style={{ display: 'flex', gap: 6 }}>
-          {[['All', ''], ['Stories', 'STORY'], ['Art', 'ART'], ['Video', 'VIDEO']].map(([label, t]) => (
-            <Link key={t} href={t ? `/feed?type=${t}` : '/feed'} style={{
-              border: '1px solid',
-              borderColor: (type ?? '') === t ? 'var(--lime)' : 'var(--border)',
-              color: (type ?? '') === t ? 'var(--lime)' : 'var(--cream-dim)',
-              padding: '6px 16px', fontSize: 10, letterSpacing: '0.1em',
-              textTransform: 'uppercase', textDecoration: 'none',
-            }}>
-              {label}
-            </Link>
-          ))}
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* Type filters */}
+          <div style={{ display: 'flex', gap: 4 }}>
+            {[['All', ''], ['Stories', 'STORY'], ['Art', 'ART'], ['Video', 'VIDEO']].map(([label, t]) => (
+              <Link key={t} href={buildHref({ type: t || undefined, page: 1 })} style={{
+                border: '1px solid',
+                borderColor: (type ?? '') === t ? 'var(--lime)' : 'var(--border)',
+                color: (type ?? '') === t ? 'var(--lime)' : 'var(--cream-dim)',
+                padding: '6px 16px', fontSize: 10, letterSpacing: '0.1em',
+                textTransform: 'uppercase', textDecoration: 'none',
+              }}>
+                {label}
+              </Link>
+            ))}
+          </div>
+          {/* Sort */}
+          <div style={{ display: 'flex', gap: 4 }}>
+            {[['New', 'new'], ['Popular', 'popular'], ['$ Low', 'price_asc'], ['$ High', 'price_desc']].map(([label, s]) => (
+              <Link key={s} href={buildHref({ sort: s, page: 1 })} style={{
+                border: '1px solid',
+                borderColor: sort === s ? 'var(--lime)' : 'var(--border)',
+                color: sort === s ? 'var(--lime)' : 'var(--cream-dim)',
+                padding: '6px 14px', fontSize: 10, letterSpacing: '0.08em',
+                textDecoration: 'none',
+              }}>
+                {label}
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Stats bar */}
+      <div style={{ maxWidth: 1400, margin: '0 auto', padding: '0 48px 24px' }}>
+        <div style={{ fontSize: 10, color: 'var(--cream-faint)' }}>
+          {total} work{total !== 1 ? 's' : ''} · showing {Math.min(PAGE_SIZE, content.length)} of {total}
         </div>
       </div>
 
@@ -118,16 +162,31 @@ export default async function FeedPage({ searchParams }: Props) {
         {/* Pagination */}
         {totalPages > 1 && (
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 48 }}>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-              <Link key={p} href={`/feed?${type ? `type=${type}&` : ''}page=${p}`} style={{
-                border: '1px solid',
-                borderColor: p === page ? 'var(--lime)' : 'var(--border)',
-                color: p === page ? 'var(--lime)' : 'var(--cream-dim)',
+            {page > 1 && (
+              <Link href={buildHref({ page: page - 1 })} style={{
+                border: '1px solid var(--border)', color: 'var(--cream-dim)',
                 padding: '6px 14px', fontSize: 11, textDecoration: 'none',
-              }}>
-                {p}
-              </Link>
+              }}>← Prev</Link>
+            )}
+            {Array.from({ length: totalPages }, (_, i) => i + 1).filter(p => Math.abs(p - page) <= 2 || p === 1 || p === totalPages).map((p, idx, arr) => (
+              <span key={p}>
+                {idx > 0 && arr[idx - 1] !== p - 1 && <span style={{ color: 'var(--cream-faint)', padding: '0 4px' }}>…</span>}
+                <Link href={buildHref({ page: p })} style={{
+                  border: '1px solid',
+                  borderColor: p === page ? 'var(--lime)' : 'var(--border)',
+                  color: p === page ? 'var(--lime)' : 'var(--cream-dim)',
+                  padding: '6px 14px', fontSize: 11, textDecoration: 'none',
+                }}>
+                  {p}
+                </Link>
+              </span>
             ))}
+            {page < totalPages && (
+              <Link href={buildHref({ page: page + 1 })} style={{
+                border: '1px solid var(--border)', color: 'var(--cream-dim)',
+                padding: '6px 14px', fontSize: 11, textDecoration: 'none',
+              }}>Next →</Link>
+            )}
           </div>
         )}
       </div>

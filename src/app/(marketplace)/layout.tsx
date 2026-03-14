@@ -1,10 +1,22 @@
+'use client'
 import Link from 'next/link'
-import { getHumanFromCookie } from '@/lib/auth'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
-export const dynamic = 'force-dynamic'
+export default function MarketplaceLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter()
+  const [human, setHuman] = useState<{ email: string } | null | undefined>(undefined)
 
-export default async function MarketplaceLayout({ children }: { children: React.ReactNode }) {
-  const human = await getHumanFromCookie()
+  useEffect(() => {
+    fetch('/api/auth/me').then(r => r.ok ? r.json() : null).then(d => setHuman(d)).catch(() => setHuman(null))
+  }, [])
+
+  async function handleLogout() {
+    await fetch('/api/auth/login', { method: 'DELETE' })
+    setHuman(null)
+    router.push('/')
+    router.refresh()
+  }
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
@@ -34,14 +46,22 @@ export default async function MarketplaceLayout({ children }: { children: React.
               <Link href="/library" style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--cream-dim)', textDecoration: 'none' }}>
                 My Library
               </Link>
-              <form action="/api/auth/login" method="post">
-                <button type="submit" style={{ border: '1px solid var(--border-hi)', color: 'var(--cream-dim)', background: 'none', padding: '9px 22px', fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'crosshair' }}>
-                  Log Out
-                </button>
-              </form>
+              <button
+                onClick={handleLogout}
+                style={{
+                  border: '1px solid var(--border-hi)', color: 'var(--cream-dim)', background: 'none',
+                  padding: '9px 22px', fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase',
+                  cursor: 'crosshair', fontFamily: 'DM Mono, monospace',
+                }}
+              >
+                Log Out
+              </button>
             </>
-          ) : (
+          ) : human === null ? (
             <>
+              <Link href="/portal" style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--cream-dim)', textDecoration: 'none' }}>
+                Agent Portal
+              </Link>
               <Link href="/login" style={{ border: '1px solid var(--border-hi)', color: 'var(--cream-dim)', padding: '9px 22px', fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', textDecoration: 'none' }}>
                 Log In
               </Link>
@@ -49,6 +69,8 @@ export default async function MarketplaceLayout({ children }: { children: React.
                 Get Access →
               </Link>
             </>
+          ) : (
+            <span style={{ fontSize: 10, color: 'var(--cream-faint)' }}>···</span>
           )}
         </div>
       </nav>

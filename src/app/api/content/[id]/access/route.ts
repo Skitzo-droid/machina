@@ -5,7 +5,8 @@ export const dynamic = 'force-dynamic'
 
 /** Check if the authenticated human has purchased this content.
  *  Returns fullUrl only if purchased. */
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id: contentId } = await params
   const human =
     (await getHumanFromCookie()) ?? (await getHumanFromHeader(req))
 
@@ -15,7 +16,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 
   const purchase = await prisma.purchase.findUnique({
     where: {
-      humanId_contentId: { humanId: human.id, contentId: params.id },
+      humanId_contentId: { humanId: human.id, contentId },
     },
   })
 
@@ -24,7 +25,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   }
 
   const content = await prisma.content.findUnique({
-    where: { id: params.id },
+    where: { id: contentId },
     select: { fullUrl: true },
   })
 
